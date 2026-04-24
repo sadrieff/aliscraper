@@ -57,10 +57,16 @@ class AliExpressScraper:
                 logger.info(f"Scraping started: {url}")
                 await page.goto(url, wait_until="domcontentloaded", timeout=60000)
                 
-                # Wait for core elements
-                try:
-                    await page.wait_for_selector('[class*="Price"], [class*="title"]', timeout=10000)
-                except: pass
+                # Даем странице больше времени на прогрузку скриптов
+                await page.wait_for_timeout(5000)
+                
+                current_title = await page.title()
+                logger.info(f"Page title: {current_title}")
+
+                if "проверку" in current_title.lower() or "security" in current_title.lower():
+                    logger.warning("CAPTCHA DETECTED! Taking screenshot...")
+                    await page.screenshot(path="captcha_debug.png")
+                    raise Exception("Blocked by Captcha")
 
                 await self._interact_with_page(page)
                 
